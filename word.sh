@@ -7,7 +7,7 @@
 #
 
 
-WORDPATH=~
+WORDPATH=/var/word
 WORDFILE=$WORDPATH/words
 
 #color defines
@@ -55,31 +55,6 @@ err_check()
 	fi
 }
 
-words_add()
-{
-	local name
-	local means
-	local example
-
-	if [ -f $WORDFILE ]; then
-		echo "word    :"
-	else
-		mkdir -p $WORDPATH
-		touch $WORDFILE
-		err_check "Cannot create $WORDFILE."
-		echo "word    :"
-	fi
-
-	read name
-	echo "means   :"
-	read means
-	echo "example :"
-	read example
-
-	echo "$name:0:$means:$example:0:0" >> $WORDFILE
-
-}
-
 #split csv line. 
 #input: $1="good,i love u,123"
 #output: count=3, value[0]=good, value[1]="i love u", value[2]=123
@@ -101,6 +76,64 @@ csv_split()
 		count=$(($count+1))
 	done
 }
+
+words_check_name()
+{
+	local name
+	local line
+	local good
+	local bad
+
+	name=$1
+	line=$(cat $WORDFILE  | grep "^$name:")
+	if [ "$?" == "0" ]; then
+		#found, incrase err number
+		echo "$name has already in vocabulary list."
+
+		csv_split "$line"
+		good=${value[4]}
+		bad=${value[5]}
+
+		bad=$(($bad + 1))
+
+		sed -i "/^$name:.*/ s/:[0-9]*:[0-9]*$/:$good:$bad/" $WORDFILE 
+
+		return 1
+	else
+		return 0
+	fi
+	
+}
+
+words_add()
+{
+	local name
+	local means
+	local example
+
+	if [ -f $WORDFILE ]; then
+		echo "word    :"
+	else
+		mkdir -p $WORDPATH
+		touch $WORDFILE
+		err_check "Cannot create $WORDFILE."
+		echo "word    :"
+	fi
+
+	read name
+
+	words_check_name $name
+	err_check "Already in list."
+
+	echo "means   :"
+	read means
+	echo "example :"
+	read example
+
+	echo "$name:0:$means:$example:0:0" >> $WORDFILE
+
+}
+
 
 gpkg_csvop_ls()
 {
@@ -207,7 +240,7 @@ words_update()
 	good=${agood[$ind]}
 	bad=${abad[$ind]}
 
-	sed -i "/$name:.*/ s/:[0-9]*:[0-9]*$/:$good:$bad/" $WORDFILE 
+	sed -i "/^$name:.*/ s/:[0-9]*:[0-9]*$/:$good:$bad/" $WORDFILE 
 }
 	
 
