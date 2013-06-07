@@ -263,6 +263,9 @@ words_show_write()
 		echo "Wrong"
 		abad[$ind]=$((${abad[$ind]} + 1))
 		echo ${aexample[$ind]}
+
+		errind[errnum]=$ind
+		errnum=$(($errnum + 1))
 	fi
 	echo 
 	words_update $ind
@@ -298,6 +301,8 @@ words_sort()
 words_write()
 {
 	local ind=0;
+	local noerr=1;
+
 	XG_CSV_OP="w"
 	lscount="0"
 	unset ameans
@@ -313,10 +318,38 @@ words_write()
 
 	words_sort;
 
-	for((ind=0; ind<$lscount; ind++))
+	unset errind
+	errnum=0
+
+	for((noerr=1; noerr<1000; ))
 	do
-		words_show_write ${aindex[$ind]}
+		#first
+		for((ind=0; ind<$lscount; ind++))
+		do
+			words_show_write ${aindex[$ind]}
+		done
+
+		#check error
+		if [ "$errnum" == "0" ]; then
+			#no error
+			noerr=1000
+		else
+			#error, copy to index array and retry
+			echo "Error $errnum, retry."
+			unset aindex
+
+			for((ind=0; ind<$errnum; ind++))
+			do
+				aindex[$ind]=${errind[$ind]}
+			done
+			lscount=$errnum
+
+			unset errind
+			errnum=0
+		fi
+
 	done
+
 }
 
 #rank=$(echo $1 | grep -o  -e "-r [0-5]")
