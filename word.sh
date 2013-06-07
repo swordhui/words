@@ -248,10 +248,13 @@ words_show_write()
 {
 	local ind;
 	local name;
+	local example
 
 	ind=$1
 	
 	echo ${ameans[$ind]}
+	echo ${aexample[$ind]} | sed "s@${aname[$ind]}@~@g"
+
 	read name
 	if [ "$name" == "${aname[$ind]}" ]; then
 		echo "Right"
@@ -259,8 +262,8 @@ words_show_write()
 	else
 		echo "Wrong"
 		abad[$ind]=$((${abad[$ind]} + 1))
+		echo ${aexample[$ind]}
 	fi
-	echo ${aexample[$ind]}
 	echo 
 	words_update $ind
 }
